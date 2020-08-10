@@ -1,5 +1,9 @@
 # heat
-Python program to generate heat demand time series from weather for an EU country..
+Python program to generate heat demand time series from weather for an EU country. 
+
+## Author
+ Malcolm Peacock 2020 
+ ( derived from code https://oruhnau/when2heat )
 
 ## Inputs
 
