@@ -45,7 +45,7 @@ parser.add_argument('--nopop', action="store_true", dest="no_population", help='
 parser.add_argument('--plot', action="store_true", dest="plot", help='Show diagnostic plots', default=False)
 parser.add_argument('--electric', action="store_true", dest="electric", help='Generate an eletricity time series', default=False)
 parser.add_argument('--interim', action="store_true", dest="interim", help='Use ERA-Interim', default=False)
-parser.add_argument("--tdays", type=int, action="store", dest="temp_days", help="Number of previous days temperature to use.", default=1)
+parser.add_argument("--tdays", type=int, action="store", dest="temp_days", help="Number of previous days temperature to use (0 to just use current day).", default=1)
 parser.add_argument("--eta", type=float, action="store", dest="efficiency", help="Factor to multiple by annual demand by to take account of efficiency.", default=1.0)
 parser.add_argument('--debug', action="store_true", dest="debug", help='Debug mode 2 days only', default=False)
 
@@ -74,10 +74,6 @@ for path in [input_path, interim_path, output_path]:
     os.makedirs(path, exist_ok=True)
 output_file = os.path.join(output_path, country + 'Ref' + str(ref) + 'Weather' + str(year) + grid + '-' + method + profile + '.csv')
 
-os.environ["ECMWF_API_URL"] = "https://api.ecmwf.int/v1"
-os.environ["ECMWF_API_KEY"] = "45a818c5dfcb79f44a3a5dd3217a2866"
-os.environ["ECMWF_API_EMAIL"] = "MPeacock2@uclan.ac.uk"
-
 # weather
 
 if interim:
@@ -89,7 +85,7 @@ if interim:
     download.temperatures(input_path, year, year)
 else:
     print('Using weather data from ERA5')
-    download.temperatures_era5(input_path, year, 6, args.grid)
+    download.weather_era5(input_path, year, 6, args.grid)
     download.wind_era5(input_path,year, args.grid)
 
 # population

@@ -9,6 +9,7 @@ from scripts.misc import group_df_by_multiple_column_levels
 
 def finishing(cop, demand_space, demand_water, electric_parameters, country, correction=.85):
 
+
     # Localize Timestamps (including daylight saving time correction) and convert to UTC
     sinks = cop.columns.get_level_values('sink').unique()
     cop = pd.concat(
@@ -32,9 +33,9 @@ def finishing(cop, demand_space, demand_water, electric_parameters, country, cor
 
     power = pd.concat(
         [pd.concat(
-            [(demand_water * hot_water_types[source] / cop[sink][source]).sum(axis=1)
+            [(demand_water * hot_water_types[source] / (1 if sink == 'resistive' else cop[sink][source]) ).sum(axis=1)
              if sink == 'water' else
-             (demand_space * heating_types[source][sink] / cop[sink][source]).sum(axis=1)
+             (demand_space * heating_types[source][sink] / (1 if sink == 'resistive' else cop[sink][source]) ).sum(axis=1)
              for sink in sinks],
             keys=sinks, axis=1
         ) for source in sources],

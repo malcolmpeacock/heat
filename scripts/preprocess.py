@@ -4,8 +4,11 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 
-import scripts.read as read
-from scripts.misc import upsample_df
+# import scripts.read as read
+# import .read as read
+from . import read
+# from scripts.misc import upsample_df
+from .misc import upsample_df
 
 def split_northern_ireland(s,keep=False):
     mainland=[]
@@ -14,7 +17,6 @@ def split_northern_ireland(s,keep=False):
         latitude=items[0][0]
         longitude=items[0][1]
         if longitude < -5.18 and latitude < 55.2 and latitude > 52.5:
-            print('In NI {} {}'.format(longitude, latitude) )
             ni.append(items[0])
         else:
             mainland.append(items[0])
@@ -35,7 +37,7 @@ def map_population(input_path, interim_path, country, interim=True, year=None, g
 
         population = read.population(input_path)
         if interim:
-            weather_data = read.wind(input_path,interim)  # For the weather grid
+            weather_data = read.wind(input_path)  # For the weather grid
         else:
             weather_data = read.wind_era5(input_path, year, grid)
 
@@ -98,9 +100,8 @@ def map_population(input_path, interim_path, country, interim=True, year=None, g
 
 def wind(input_path, mapped_population, interim, year, grid='I', plot=True):
 
-    df = read.wind(input_path)
     if interim:
-        df = read.wind(input_path,interim)
+        df = read.wind(input_path)
     else:
         df = read.wind_era5(input_path, year, grid)
 
@@ -132,7 +133,7 @@ def temperature(input_path, year, mapped_population, interim_path, country='GB',
             'soil': 'stl4'
         }
         t = pd.concat(
-            [read.temperature_era5(input_path, year, hour, grid, parameter) for parameter in parameters.values()],
+            [read.weather_era5(input_path, year, hour, grid, 'temperature', parameter) for parameter in parameters.values()],
             keys=parameters.keys(), names=['parameter', 'latitude', 'longitude'], axis=1
         )
 

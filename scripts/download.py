@@ -72,7 +72,7 @@ def wind_era5(input_path, year, grid='I'):
             'area': [ 72, -10.5, 36.75, 25.5, ],
             'grid': grids[grid],
         }
-        print('Downloading temperature to {}'.format(file))
+        print('Downloading wind to {}'.format(file))
         print(request)
         # Download ERA5 weather 
         c = cdsapi.Client()
@@ -103,9 +103,9 @@ def temperatures(input_path, year_start, year_end):
         else:
             print('{} already exists. Download is skipped.'.format(file))
 
-def temperatures_era5(input_path, year, hours=6, grid='I'):
+def weather_era5(input_path, year, hours=6, grid='I', name='temperature', variables = [ '2m_temperature', 'soil_temperature_level_4', ], area=[ 72, -10.5, 36.75, 25.5, ] ):
     grids = { 'I' : ['0.75', '0.75'], '5' : ['0.25', '0.25'] }
-    filename = 'ERA{}{}_temperature_{}.nc'.format(hours,grid,year)
+    filename = 'ERA{}{}_{}_{}.nc'.format(hours,grid,name,year)
     weather_path = os.path.join(input_path, 'weather')
     os.makedirs(weather_path, exist_ok=True)
     file = os.path.join(weather_path, filename)
@@ -119,7 +119,7 @@ def temperatures_era5(input_path, year, hours=6, grid='I'):
         request = {
             'product_type': 'reanalysis',
             'format': 'netcdf',
-            'variable': [ '2m_temperature', 'soil_temperature_level_4', ],
+            'variable': variables,
             'year': year,
             'month': [
             '01', '02', '03',
@@ -141,10 +141,10 @@ def temperatures_era5(input_path, year, hours=6, grid='I'):
             '31',
             ],
             'time': times,
-            'area': [ 72, -10.5, 36.75, 25.5, ],
+            'area': area,
             'grid': grids[grid],
         }
-        print('Downloading temperature to {}'.format(file))
+        print('Downloading weather to {}'.format(file))
         print(request)
         # Download ERA5 weather 
         c = cdsapi.Client()

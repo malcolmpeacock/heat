@@ -14,8 +14,8 @@ def temperature(input_path, year_start, year_end, param):
         axis=0
     )
 
-def temperature_era5(input_path, year, hour, grid, param):
-    filename = 'ERA{}{}_temperature_{}.nc'.format(hour,grid,year)
+def weather_era5(input_path, year, hour, grid, name, param):
+    filename = 'ERA{}{}_{}_{}.nc'.format(hour,grid,name,year)
     return pd.concat( [weather(input_path, filename, param) ], axis=0)
 
 def wind(input_path):
@@ -50,6 +50,7 @@ def weather(input_path, filename, variable_name):
 
     # Read the netCDF file
     nc = Dataset(file)
+#   print(nc.variables)
     time = nc.variables['time'][:]
     time_units = nc.variables['time'].units
     latitude = nc.variables['latitude'][:]
@@ -155,7 +156,8 @@ def electric_parameters(input_path, country='GB'):
 
     parms_water = {'ground': parms['water']['ground']['water'],
                    'air': parms['water']['air']['water'],
-                   'water': parms['water']['water']['water'] }
+                   'water': parms['water']['water']['water'],
+                   'resistive': parms['water']['resistive']['water'] }
     
     return parms['heating'], parms_water
 
