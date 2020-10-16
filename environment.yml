@@ -1,0 +1,14 @@
+name: heat
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - cdsapi
+  - ecmwf-api-client
+  - geopandas
+  - matplotlib
+  - netCDF4
+  - numpy
+  - pandas
+  - pytz
+  - shapely
