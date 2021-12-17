@@ -4,7 +4,7 @@ import ssl
 import datetime
 import urllib
 import zipfile
-from ecmwfapi import ECMWFDataServer
+#from ecmwfapi import ECMWFDataServer
 import cdsapi
 
 def wind(input_path):
@@ -43,6 +43,7 @@ def wind_era5(input_path, year, grid='I'):
         months = []
         for month in range(12):
             months.append("{:02d}".format(month+1))
+# TODO this is wrong ??? - probably this function is not used
         months = [10, 11, 12, 1, 2, 3, 4]
         times=[]
         for i in range(0,24):

@@ -28,14 +28,15 @@ def finishing(cop, demand_space, demand_water, electric_parameters, country, cor
     hot_water_types = electric_parameters['hot_water_types']
  
     # Spatial aggregation
-    sources = cop.columns.get_level_values('source').unique()
+    sources = cop.columns.get_level_values('source').unique().tolist()
+    sources.append('resistive')
     sinks = cop.columns.get_level_values('sink').unique()
 
     power = pd.concat(
         [pd.concat(
-            [(demand_water * hot_water_types[source] / (1 if sink == 'resistive' else cop[sink][source]) ).sum(axis=1)
+            [(demand_water * hot_water_types[source] / (1 if source == 'resistive' else cop[sink][source]) ).sum(axis=1)
              if sink == 'water' else
-             (demand_space * heating_types[source][sink] / (1 if sink == 'resistive' else cop[sink][source]) ).sum(axis=1)
+             (demand_space * heating_types[source][sink] / (1 if source == 'resistive' else cop[sink][source]) ).sum(axis=1)
              for sink in sinks],
             keys=sinks, axis=1
         ) for source in sources],

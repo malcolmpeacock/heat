@@ -70,19 +70,23 @@ def to_csv(shaped_dfs, output_path):
             file = os.path.join(output_path, 'when2heat_{}.csv'.format(shape))
             df.to_csv(file, float_format='%g')
 
-def combined_csv(output_file, demand, cop, temp, electric):
+def combined_csv(output_file, demand, cop, temp, gtemp, electric, adverse):
 
     # Merge everything
     if len(electric)==0:
-        df = pd.concat([demand, cop, temp], axis=1)
+        df = pd.concat([demand, cop, temp, gtemp], axis=1)
     else:
-        df = pd.concat([demand, cop, electric, temp], axis=1)
+        df = pd.concat([demand, cop, electric, temp, gtemp], axis=1)
     df = df.sort_index(level=0, axis=1)
 
     # Timestamp
     index = pd.DatetimeIndex(df.index)
     df.index = index.strftime('%Y-%m-%dT%H:%M:%SZ')
 
+    # Hack for adverse problem
+    if adverse and df.index[0][0:4] == '1969' :
+        print("ADVERSE Hack")
+        df = df.iloc[1: , :]
     df.to_csv(output_file, sep=',', decimal='.', float_format='%g')
 
 def demand_csv(demand, output_file):

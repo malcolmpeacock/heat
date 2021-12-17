@@ -5,6 +5,9 @@ heating,air,radiator,0.81
 heating,air,floor,0.09
 heating,water,radiator,0.0
 heating,water,floor,0.0
+heating,resistive,radiator,0.0
+heating,resistive,floor,0.0
 water,ground,water,0.1
 water,air,water,0.9
 water,water,water,0.0
+water,resistive,water,0.0

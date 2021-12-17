@@ -40,18 +40,22 @@ parser.add_argument('--version', action="store", dest="version", help='Version -
 parser.add_argument('--method', action="store", dest="method", help='Heat demand calculation method: ' + method_string, default='S' )
 parser.add_argument('--grid', action="store", dest="grid", help='Grid I=0.75,0.75; 5=0.25,0.25 ', default='I' )
 parser.add_argument('--profile', action="store", dest="profile", help='Hourly profile', default='bdew' )
+parser.add_argument('--adverse', action="store", dest="adverse", help='UK Met office adverse weather scenario file', default=None)
 parser.add_argument('--country', action="store", dest="country", help='Country one of:'+','.join(all_countries), default='GB' )
 parser.add_argument('--nopop', action="store_true", dest="no_population", help='No weighting by population', default=False)
 parser.add_argument('--plot', action="store_true", dest="plot", help='Show diagnostic plots', default=False)
+parser.add_argument('--climate', action="store_true", dest="climate", help='Account for climate change', default=False)
 parser.add_argument('--electric', action="store_true", dest="electric", help='Generate an eletricity time series', default=False)
 parser.add_argument('--interim', action="store_true", dest="interim", help='Use ERA-Interim', default=False)
-parser.add_argument("--tdays", type=int, action="store", dest="temp_days", help="Number of previous days temperature to use (0 to just use current day).", default=1)
+parser.add_argument("--tdays", type=int, action="store", dest="temp_days", help="Number of previous days temperature to use (1 to just use current day).", default=1)
+# This is 1.0 because I am supplying annual heat demand for the country as
+# opposed to fuel energy.
 parser.add_argument("--eta", type=float, action="store", dest="efficiency", help="Factor to multiple by annual demand by to take account of efficiency.", default=1.0)
 parser.add_argument('--debug', action="store_true", dest="debug", help='Debug mode 2 days only', default=False)
 
 args = parser.parse_args()
-year = args.weather
 ref = args.ref
+year = args.weather
 if args.version:
     version = args.version
 else:
@@ -72,21 +76,31 @@ output_path = os.path.join(home_path, 'output', version)
 
 for path in [input_path, interim_path, output_path]:
     os.makedirs(path, exist_ok=True)
-output_file = os.path.join(output_path, country + 'Ref' + str(ref) + 'Weather' + str(year) + grid + '-' + method + profile + '.csv')
+output_name = '{}Ref{}Weather{}{}-{}{}'.format(country,str(ref),str(year),grid,method,profile)
+if args.climate:
+    output_name += 'C'
+#print('output_name {}'.format(output_name))
+output_file = os.path.join(output_path, output_name + '.csv')
+if args.adverse:
+    output_file = os.path.join(output_path, args.adverse + '.csv')
 
 # weather
 
-if interim:
-    print('Using weather data from ERA-Interim')
-    if "ECMWF_API_URL" not in os.environ or "ECMWF_API_KEY" not in os.environ or "ECMWF_API_EMAIL" not in os.environ:
-        print("Environment variaiobs ECMWF_API_URL, ECMWF_API_KEY and ECMWF_API_EMAIL must be set to use ERA-Interim")
-        quit()
-    download.wind(input_path)
-    download.temperatures(input_path, year, year)
+if args.adverse:
+    print('Using Adverse weather scenario file')
 else:
-    print('Using weather data from ERA5')
-    download.weather_era5(input_path, year, 6, args.grid)
-    download.wind_era5(input_path,year, args.grid)
+
+    if interim:
+        print('Using weather data from ERA-Interim')
+        if "ECMWF_API_URL" not in os.environ or "ECMWF_API_KEY" not in os.environ or "ECMWF_API_EMAIL" not in os.environ:
+            print("Environment variables ECMWF_API_URL, ECMWF_API_KEY and ECMWF_API_EMAIL must be set to use ERA-Interim")
+            quit()
+        download.wind(input_path)
+        download.temperatures(input_path, year, year)
+    else:
+        print('Using weather data from ERA5')
+        download.weather_era5(input_path, year, 6, args.grid)
+        download.wind_era5(input_path,year, args.grid)
 
 # population
 # the population grid determines which weather grid squares belong to 
@@ -96,7 +110,7 @@ download.population(input_path)
 
 print('Mapping population ... ')
 
-mapped_population = preprocess.map_population(input_path, interim_path, country, interim, year, args.grid, args.plot)
+mapped_population = preprocess.map_population(input_path, interim_path, country, args.adverse, interim, year, args.grid, args.plot)
 
 # if no population weighting,
 # set the population values all to the same thing so we get no weighting.
@@ -109,13 +123,13 @@ else:
 
 print('Processing wind ... ')
 
-wind = preprocess.wind(input_path, mapped_population, interim, year, args.grid, args.plot)
+wind = preprocess.wind(input_path, mapped_population, interim, year, args.grid, args.plot, args.adverse)
 if args.plot:
     plt.show()
 
 print('Processing temp ... ')
 
-temperature = preprocess.temperature(input_path, year, mapped_population, interim_path, country, args.grid)
+temperature = preprocess.temperature(input_path, year, mapped_population, interim_path, args.adverse, country, args.grid, 6)
 
 # reduce size of data for debugging. 
 # Number of days must be enough for number of days of reference temperature!
@@ -123,6 +137,11 @@ temperature = preprocess.temperature(input_path, year, mapped_population, interi
 if args.debug:
     temperature = temperature['2018-01-01 00:00:00' : '2018-01-05 23:00:00']
     print(temperature)
+
+# Account for climate change
+if args.climate:
+    print('Accounting for Climate Change')
+    temperature = preprocess.climate(temperature, year)
 
 # Reference temperature
 
@@ -227,12 +246,16 @@ if args.electric:
 else:
     electric = pd.Series()
 
-# hourly temperature
+# hourly air temperature
 t = temperature['air'].mean(axis=1) - 273.15
 t.rename('temperature', inplace=True)
 t = localize(t, country).tz_convert('utc')
+# hourly soil temperature
+g = temperature['soil'].mean(axis=1) - 273.15
+g.rename('soiltemp', inplace=True)
+g = localize(g, country).tz_convert('utc')
 
 # output the csv file
-write.combined_csv( output_file, final_heat, final_cop, t, electric)
+write.combined_csv( output_file, final_heat, final_cop, t, g, electric, args.adverse)
 print('Output written to {}'.format(output_file))
 

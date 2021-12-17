@@ -18,6 +18,23 @@ def weather_era5(input_path, year, hour, grid, name, param):
     filename = 'ERA{}{}_{}_{}.nc'.format(hour,grid,name,year)
     return pd.concat( [weather(input_path, filename, param) ], axis=0)
 
+def wind_adverse(input_path, adverse):
+    filename = 'adverse/{}_{}.nc'.format(adverse,'windspeed')
+    print('Reading adverse wind')
+    daily = weather(input_path, filename, 'wind_speed')
+    print(daily)
+    return daily
+
+def temp_adverse(input_path, adverse, parameter):
+    filename = 'adverse/{}_{}.nc'.format(adverse,'tas')
+    print('Reading adverse temperature')
+    daily = weather(input_path, filename, 't2m')
+    # assume soil temperature is 1 degree higher
+    if parameter == 'stl4':
+        daily = daily + 1.0
+    print(daily)
+    return daily
+
 def wind(input_path):
 
     return weather(input_path, 'ERA_wind.nc', 'si10')
@@ -165,3 +182,7 @@ def cop_parameters(input_path):
 
     file = os.path.join(input_path, 'cop', 'cop_parameters.csv')
     return pd.read_csv(file, sep=';', decimal=',', header=0, index_col=0).apply(pd.to_numeric, downcast='float')
+
+def temperature_profile(input_path):
+    file = os.path.join(input_path, 'temperature', 'hourly_profile.csv')
+    return pd.read_csv(file, header=0, index_col=0)

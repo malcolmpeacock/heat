@@ -4,10 +4,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 
-# import scripts.read as read
-# import .read as read
 from . import read
-# from scripts.misc import upsample_df
 from .misc import upsample_df
 
 def split_northern_ireland(s,keep=False):
@@ -26,20 +23,26 @@ def split_northern_ireland(s,keep=False):
         new_s = s.loc[mainland]
     return new_s
 
-def map_population(input_path, interim_path, country, interim=True, year=None, grid='I', plot=True):
+def map_population(input_path, interim_path, country, adverse,  interim=True, year=None, grid='I', plot=True):
 
     weather_grid = None
     mapped_population = {}
 
-    file = os.path.join(interim_path, 'population{}_{}'.format(grid,country))
+    if adverse:
+        file = os.path.join(interim_path, 'population_adverse')
+    else:
+        file = os.path.join(interim_path, 'population{}_{}'.format(grid,country))
 
     if not os.path.isfile(file):
 
         population = read.population(input_path)
-        if interim:
-            weather_data = read.wind(input_path)  # For the weather grid
+        if adverse:
+            weather_data = read.wind_adverse(input_path, adverse)
         else:
-            weather_data = read.wind_era5(input_path, year, grid)
+            if interim:
+                weather_data = read.wind(input_path)  # For the weather grid
+            else:
+                weather_data = read.wind_era5(input_path, year, grid)
 
         # Make GeoDataFrame from the weather data coordinates
         weather_grid = gpd.GeoDataFrame(index=weather_data.columns)
@@ -98,12 +101,15 @@ def map_population(input_path, interim_path, country, interim=True, year=None, g
     return mapped_population
 
 
-def wind(input_path, mapped_population, interim, year, grid='I', plot=True):
+def wind(input_path, mapped_population, interim, year, grid='I', plot=True, adverse=None):
 
-    if interim:
-        df = read.wind(input_path)
+    if adverse:
+        df = read.wind_adverse(input_path, adverse)
     else:
-        df = read.wind_era5(input_path, year, grid)
+        if interim:
+            df = read.wind(input_path)
+        else:
+            df = read.wind_era5(input_path, year, grid)
 
     # Temporal average
     s = df.mean(0)
@@ -118,31 +124,72 @@ def wind(input_path, mapped_population, interim, year, grid='I', plot=True):
     pd_wind = s.loc[mapped_population.index.tolist()]
     return pd_wind
 
+def temperature_daily2hourly(input_path, t):
+    t.index = pd.DatetimeIndex(t.index.date, name='time')
+    t = upsample_df(t, '60min')
+#   print('After upsample')
+#   print(t)
+    # apply the hourly temperature profile
+    profile = read.temperature_profile(input_path)
+#   print(profile)
+    times = t.index.map(lambda x: int(x.strftime('%H')))
+#   print(times)
+    # add on the mean difference of the temperature for that hour to the 
+    # average temperature, so that for the middle of the day we have a higher
+    # temperature and for the night we have a lower one.
+    t = t + profile.loc[times].values
+#   print(t)
+    return t
 
-def temperature(input_path, year, mapped_population, interim_path, country='GB', grid='I', hour=6):
+def temperature(input_path, year, mapped_population, interim_path, adverse, country='GB', grid='I', hour=6):
 
-    file = os.path.join(interim_path, 'temperature_' + grid + country + str(year))
-
-    if os.path.isfile(file):
-        temp_data = pd.read_pickle(file)
-        print('temperature preprocessed {} already exists and is read from disk.'.format(file))
-    else:
-
+    if adverse:
         parameters = {
             'air': 't2m',
             'soil': 'stl4'
         }
         t = pd.concat(
-            [read.weather_era5(input_path, year, hour, grid, 'temperature', parameter) for parameter in parameters.values()],
+                [read.temp_adverse(input_path, adverse, parameter) for parameter in parameters.values()],
             keys=parameters.keys(), names=['parameter', 'latitude', 'longitude'], axis=1
         )
 
-        t = upsample_df(t, '60min')
+        t = temperature_daily2hourly(input_path, t)
+#       t.to_pickle("/home/malcolm/uclan/tools/python/scripts/heat/output/adv/pickle")
 
         temp_data = pd.concat(
             [t[parameter][mapped_population.index.tolist()] for parameter in parameters.keys()], keys=parameters.keys(), names=['parameter', 'latitude', 'longitude'], axis=1)
 
-        # Write results to interim path
-        temp_data.to_pickle(file)
+    else:
+        file = os.path.join(interim_path, 'temperature_' + grid + country + str(year))
 
+        if os.path.isfile(file):
+            temp_data = pd.read_pickle(file)
+            print('temperature preprocessed {} already exists and is read from disk.'.format(file))
+        else:
+
+            parameters = {
+                'air': 't2m',
+                'soil': 'stl4'
+            }
+            t = pd.concat(
+                [read.weather_era5(input_path, year, hour, grid, 'temperature', parameter) for parameter in parameters.values()],
+            keys=parameters.keys(), names=['parameter', 'latitude', 'longitude'], axis=1
+            )
+
+            t = upsample_df(t, '60min')
+
+            temp_data = pd.concat(
+            [t[parameter][mapped_population.index.tolist()] for parameter in parameters.keys()], keys=parameters.keys(), names=['parameter', 'latitude', 'longitude'], axis=1)
+
+            # Write results to interim path
+            temp_data.to_pickle(file)
+
+#   print(temp_data.index)
+#   quit()
     return temp_data
+
+def climate(temperature, year):
+    temperature_change = (2020 - year) / 40.0
+    temperature['air'] = temperature['air'] + temperature_change
+    temperature['soil'] = temperature['soil'] + temperature_change
+    return temperature
