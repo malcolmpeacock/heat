@@ -83,9 +83,8 @@ def combined_csv(output_file, demand, cop, temp, gtemp, electric, adverse):
     index = pd.DatetimeIndex(df.index)
     df.index = index.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    # Hack for adverse problem
+    # Hack for adverse problem. Possibly caused by dates starting in 1970?
     if adverse and df.index[0][0:4] == '1969' :
-        print("ADVERSE Hack")
         df = df.iloc[1: , :]
     df.to_csv(output_file, sep=',', decimal='.', float_format='%g')
 

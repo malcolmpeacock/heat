@@ -40,7 +40,7 @@ parser.add_argument('--version', action="store", dest="version", help='Version -
 parser.add_argument('--method', action="store", dest="method", help='Heat demand calculation method: ' + method_string, default='S' )
 parser.add_argument('--grid', action="store", dest="grid", help='Grid I=0.75,0.75; 5=0.25,0.25 ', default='I' )
 parser.add_argument('--profile', action="store", dest="profile", help='Hourly profile', default='bdew' )
-parser.add_argument('--adverse', action="store", dest="adverse", help='UK Met office adverse weather scenario file', default=None)
+parser.add_argument('--adverse', action="store", dest="adverse", help='UK Met office adverse weather scenario file in the adverse sub director within the weather directory', default=None)
 parser.add_argument('--country', action="store", dest="country", help='Country one of:'+','.join(all_countries), default='GB' )
 parser.add_argument('--nopop', action="store_true", dest="no_population", help='No weighting by population', default=False)
 parser.add_argument('--plot', action="store_true", dest="plot", help='Show diagnostic plots', default=False)
@@ -51,6 +51,7 @@ parser.add_argument("--tdays", type=int, action="store", dest="temp_days", help=
 # This is 1.0 because I am supplying annual heat demand for the country as
 # opposed to fuel energy.
 parser.add_argument("--eta", type=float, action="store", dest="efficiency", help="Factor to multiple by annual demand by to take account of efficiency.", default=1.0)
+parser.add_argument("--ceta", type=float, action="store", dest="ceta", help="Factor to multiple COP demand by to take account of real world.", default=0.85)
 parser.add_argument('--debug', action="store_true", dest="debug", help='Debug mode 2 days only', default=False)
 
 args = parser.parse_args()
@@ -211,6 +212,9 @@ if year != ref:
         quit()
 #   get hdd for weather year
     hdd = demand.hdd(reference_temperature, mapped_population, base_temp=15.5)
+    # Adverse weather scenarios are 2 years therefore divide by 2
+    if args.adverse:
+        hdd = hdd / 2.0
     print ('Reference year not equal to weather year, scale by hdd {} hdd_ref {} '.format(hdd,hdd_ref))
     annual_space['residential'] = annual_space['residential'] * hdd / hdd_ref
     annual_space['commercial'] = annual_space['commercial'] * hdd / hdd_ref
@@ -232,7 +236,7 @@ sink_temperature = cop.sink_temperature(temperature)
 cop_parameters = read.cop_parameters(input_path)
 spatial_cop = cop.spatial_cop(source_temperature, sink_temperature, cop_parameters)
 
-final_cop = cop.finishing(spatial_cop, spatial_space, spatial_water, country)
+final_cop = cop.finishing(spatial_cop, spatial_space, spatial_water, country, args.ceta)
 
 
 # Calculate an electricity demand
