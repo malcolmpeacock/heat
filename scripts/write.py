@@ -84,8 +84,10 @@ def combined_csv(output_file, demand, cop, temp, gtemp, electric, adverse):
     df.index = index.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Hack for adverse problem. Possibly caused by dates starting in 1970?
-    if adverse and df.index[0][0:4] == '1969' :
-        df = df.iloc[1: , :]
+    if adverse:
+        str_year = df.index[0][0:4]
+        if str_year == '1969' or  str_year == '1968':
+            df = df.iloc[1: , :]
     df.to_csv(output_file, sep=',', decimal='.', float_format='%g')
 
 def demand_csv(demand, output_file):
