@@ -136,7 +136,7 @@ temperature = preprocess.temperature(input_path, year, mapped_population, interi
 # Number of days must be enough for number of days of reference temperature!
 
 if args.debug:
-    temperature = temperature['2018-01-01 00:00:00' : '2018-01-05 23:00:00']
+#   temperature = temperature['2018-01-01 00:00:00' : '2018-01-05 23:00:00']
     print(temperature)
 
 # Account for climate change
@@ -153,6 +153,17 @@ reference_temperature = demand.reference_temperature(temperature['air'],num_prev
 
 print('Daily parms ... ')
 daily_parameters = read.daily_parameters(input_path)
+
+if args.debug:
+    print('Windy locations')
+    windy_locations = {
+        'normal': wind[wind <= 4.4].index,
+        'windy': wind[wind > 4.4].index
+    }
+    for windiness, locations in windy_locations.items():
+        print(windiness)
+        print(len(locations))
+        print(locations)
 
 print('Daily heat and water ... ')
 if method == 'B':
