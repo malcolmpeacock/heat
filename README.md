@@ -1,5 +1,5 @@
 # heat
-Python program to generate heat demand time series from weather for an EU country. 
+Python program to generate heat demand time series from weather for an EU country. Optionally also generates an electricity demand time series.
 
 ## Author
  Malcolm Peacock 2020 
@@ -15,6 +15,7 @@ Python program to generate heat demand time series from weather for an EU countr
 * Annual demand figures for space and water heating for the reference year
 * ERA-Interim or ERA5 API key
 * Method of splitting up the annual demand
+* Which hourly profile to use
 
 ### Downloaded by the program
 
@@ -25,7 +26,9 @@ Python program to generate heat demand time series from weather for an EU countr
 
 * Hourly profile from BDEW/BGW
 * Flat Hourly profile
+* RHPP Heat Pump Trial Hourly Profile
 * Default annual demand values for some years / countries
+* Example input file for the proportions of heat pump types: GB.csv
 
 ## Function
 
