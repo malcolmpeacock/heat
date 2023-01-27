@@ -41,17 +41,17 @@ csv file containing one row per hour of the year, and columns for:
 * heat pump COP for GSHP, ASHP, WSHP and sinks: radiator, floor, water.
 * space and water heating demand
 * mean temperature
-* optional eletric heat time series.
+* optional heating electricty demand time series.
 
 ## Example of use
 
 python heat_series.py 2018 2018
 
-to use other years, for example for GB, you need to supply a annual demand in input/GB.csv
+to use other years, for example for GB, you need to supply an annual demand in input/GB.csv
 
 ## Heat demand methods
 
-There are 4 differet heat demad methods:
+There are 4 different heat demand methods:
 * S - Heating Degree Days with a base temperature of 15.5
 * H - Heading Degree Days with a base temperature of 12.8
 * B - BDEW German Gas Demand Methodology 
