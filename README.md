@@ -29,6 +29,7 @@ Python program to generate heat demand time series from weather for an EU countr
 * RHPP Heat Pump Trial Hourly Profile
 * Default annual demand values for some years / countries
 * Example input file for the proportions of heat pump types: GB.csv
+* Historic electricity demand from I. A. G. Wilson, A. J. R. Rennie, Y. Ding, P. C. Eames, P. J. Hall, and N. J. Kelly, "Historical daily gas and electrical energy flows through Great Britain's transmission networks and the decarbonisation of domestic heat," Energy policy, vol. 61, pp. 301-305, 2013, doi: 10.1016/j.enpol.2013.05.110.
 
 ## Function
 
@@ -45,9 +46,13 @@ csv file containing one row per hour of the year, and columns for:
 
 ## Example of use
 
-python heat_series.py 2018 2018
+python heat_series.py 2018 2018 --electric
 
 to use other years, for example for GB, you need to supply an annual demand in input/GB.csv
+
+to create a baseline electricity demand without heat:
+
+python baseline_plot.py
 
 ## Heat demand methods
 
